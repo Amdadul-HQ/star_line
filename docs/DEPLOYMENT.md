@@ -26,6 +26,10 @@ cd apps/web && pnpm start      # or deploy .next to your Node host
 ## Production checklist (before going live)
 
 - [ ] Real SMS gateway implementing `OtpProvider` (swap `OTP_PROVIDER`); remove `OTP_SANDBOX_CODE`.
+- [ ] Payments: `PAYMENT_PROVIDER=sslcommerz` with live store credentials and
+      `SSLCOMMERZ_SANDBOX=false`; set `API_BASE_URL`/`WEB_BASE_URL` to public
+      HTTPS origins (gateway callbacks depend on them). The sandbox gateway
+      auto-disables (404) whenever a real provider is active.
 - [ ] TLS termination (reverse proxy) for HTTP + WebSocket upgrade (`/realtime`).
 - [ ] Postgres with backups/PITR; run `prisma migrate deploy` in CI, never `migrate dev`.
 - [ ] Socket.IO Redis adapter + Redis caches when running >1 API instance.

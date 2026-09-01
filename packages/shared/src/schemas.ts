@@ -93,6 +93,13 @@ export const routeStopSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   isBoardingPoint: z.boolean().default(true),
+  /** Marks this stop as a staffed ticket counter. */
+  isCounter: z.boolean().default(false),
+  counterPhone: z.string().trim().max(20).nullish(),
+  counterAddress: z.string().trim().max(200).nullish(),
+  note: z.string().trim().max(300).nullish(),
+  /** Counter staff (user ids, e.g. ticketers) assigned to this counter. */
+  staffIds: z.array(z.string().cuid()).max(10).default([]),
 });
 
 export const routeCreateSchema = z.object({
@@ -102,7 +109,10 @@ export const routeCreateSchema = z.object({
   destination: z.string().trim().min(2).max(60),
   distanceKm: z.number().positive().max(2000),
   estimatedDurationMin: z.number().int().positive().max(24 * 60),
+  /** NON_AC (base class) fare. */
   baseFareBdt: z.number().int().positive().max(100000),
+  /** Optional AC-class fare; falls back to base when unset. */
+  acFareBdt: z.number().int().positive().max(100000).nullish(),
   status: z.enum(ROUTE_STATUSES).default('ACTIVE'),
   /** Ordered origin → destination; at least origin + destination. */
   stops: z.array(routeStopSchema).min(2),
@@ -217,6 +227,21 @@ export const profileUpdateSchema = z.object({
   preferredLocale: z.enum(['en', 'bn']).optional(),
 });
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+
+// ------------------------------------------------------------------ booking
+export const tripSearchQuerySchema = z.object({
+  from: z.string().trim().min(2).max(60),
+  to: z.string().trim().min(2).max(60),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD'),
+});
+export type TripSearchQuery = z.infer<typeof tripSearchQuerySchema>;
+
+export const bookingCreateSchema = z.object({
+  tripId: z.string().cuid(),
+  seatNumbers: z.array(z.string().trim().min(1).max(6)).min(1).max(4),
+  boardingPoint: z.string().trim().max(80).nullish(),
+});
+export type BookingCreateInput = z.infer<typeof bookingCreateSchema>;
 
 // ------------------------------------------------------------------ settings
 export const generalSettingsSchema = z.object({

@@ -2,7 +2,7 @@
 
 A production-grade transport operations platform for **Star Line** (Bangladesh): passenger booking & live tracking, fleet + branch operations, RBAC-secured admin, and a real-time GPS subsystem — bilingual (English / বাংলা) from day one.
 
-**Status: Phase 1 + Real-time GPS subsystem complete.** Booking flows (search → seat selection → payment) arrive in Phase 2; their data models are already in the schema.
+**Status: Phase 1 + Real-time GPS + online booking complete.** Passengers search trips, pick seats on a live seat map, and pay online — through a `PaymentProvider` abstraction with a zero-config **sandbox gateway** and a production-ready **SSLCommerz** integration (whose hosted checkout offers bKash, Nagad, Rocket and cards). Counter (ticketer) booking, QR tickets and reports arrive in later phases.
 
 ## Stack
 
@@ -57,6 +57,16 @@ The demo passenger holds a booking on today's **Dhaka → Feni 08:30** trip — 
 5. Alternatively sign in as `driver@starline.local` on a phone-sized window and press **START TRIP** to share real browser GPS.
 
 The simulator pushes fixes through the *same* backend pipeline as a real device (validation → latest-location store → async history → WebSocket rooms) — nothing is faked in the frontend.
+
+## Book a ticket online in 60 seconds
+
+1. On the landing page pick **From/To/date** → Search Bus (or open `/search`).
+2. Pick a trip → **View Seats** → tap seats on the live seat map (booked/held seats are locked).
+3. Sign in with any +880 number (sandbox OTP `123456`) → **Reserve & Pay**.
+4. You land on the **sandbox payment gateway** — simulate success/failure/cancel.
+5. Success → **Booking Confirmed** with your ticket; failure/cancel → seats release automatically (unpaid reservations also auto-expire after 15 min).
+
+To use the real gateway, set in `apps/api/.env`: `PAYMENT_PROVIDER=sslcommerz` plus `SSLCOMMERZ_STORE_ID` / `SSLCOMMERZ_STORE_PASSWORD` (free sandbox account at developer.sslcommerz.com). The SSLCommerz hosted page then offers **bKash, Nagad, Rocket, cards and net-banking**; a direct bKash PGW provider can be added behind the same `PaymentProvider` port.
 
 ## Repository layout
 

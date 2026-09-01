@@ -171,9 +171,24 @@ export class TripsService {
     return this.toDto(trip);
   }
 
+  /** Class-aware default fare: AC buses use the route's AC fare when set. */
+  private classFare(
+    route: { baseFareBdt: number; acFareBdt: number | null },
+    busCategory: 'AC' | 'NON_AC' | null,
+  ): number {
+    return busCategory === 'AC' && route.acFareBdt ? route.acFareBdt : route.baseFareBdt;
+  }
+
   async create(input: TripCreateInput, actor: RequestUser): Promise<TripDto> {
     const route = await this.prisma.route.findUnique({ where: { id: input.routeId } });
     if (!route) throw AppError.notFound('Route not found');
+
+    let busCategory: 'AC' | 'NON_AC' | null = null;
+    if (input.busId) {
+      const bus = await this.prisma.bus.findUnique({ where: { id: input.busId } });
+      if (!bus) throw AppError.notFound('Bus not found');
+      busCategory = bus.category;
+    }
 
     const departureAt = dhakaDateTime(input.serviceDate, input.departureTime);
     await this.validateAssignments(null, {
@@ -192,7 +207,7 @@ export class TripsService {
         scheduleId: input.scheduleId ?? null,
         serviceDate: serviceDateValue(input.serviceDate),
         departureAt,
-        fareBdt: input.fareBdt ?? route.baseFareBdt,
+        fareBdt: input.fareBdt ?? this.classFare(route, busCategory),
         busId: input.busId ?? null,
         driverId: input.driverId ?? null,
         supervisorId: input.supervisorId ?? null,
@@ -214,7 +229,11 @@ export class TripsService {
   async assign(id: string, input: TripAssignInput, actor: RequestUser): Promise<TripDto> {
     const trip = await this.prisma.trip.findUnique({
       where: { id },
-      include: { route: { select: { name: true, estimatedDurationMin: true } } },
+      include: {
+        route: {
+          select: { name: true, estimatedDurationMin: true, baseFareBdt: true, acFareBdt: true },
+        },
+      },
     });
     if (!trip) throw AppError.notFound('Trip not found');
     if (['COMPLETED', 'CANCELLED'].includes(trip.status)) {
@@ -234,6 +253,23 @@ export class TripsService {
     });
     await this.validateCrewRoles(next);
 
+    // Bus class changed? Re-apply the class default fare — but only while the
+    // fare is still a default and nobody has bought a ticket at the old price.
+    let fareBdt: number | undefined;
+    if (input.busId !== undefined && next.busId && next.busId !== trip.busId) {
+      const bus = await this.prisma.bus.findUnique({ where: { id: next.busId } });
+      if (!bus) throw AppError.notFound('Bus not found');
+      const soldSeats = await this.prisma.booking.count({
+        where: { tripId: id, status: { notIn: ['CANCELLED'] } },
+      });
+      const defaults = [trip.route.baseFareBdt, trip.route.acFareBdt].filter(
+        (f): f is number => f != null,
+      );
+      if (soldSeats === 0 && defaults.includes(trip.fareBdt)) {
+        fareBdt = this.classFare(trip.route, bus.category);
+      }
+    }
+
     const updated = await this.prisma.trip.update({
       where: { id },
       data: {
@@ -241,6 +277,7 @@ export class TripsService {
         driverId: next.driverId,
         supervisorId: next.supervisorId,
         helperId: next.helperId,
+        ...(fareBdt !== undefined ? { fareBdt } : {}),
         ...(input.branchId !== undefined ? { branchId: input.branchId } : {}),
       },
       include: tripInclude,

@@ -21,6 +21,15 @@ const envSchema = z.object({
   GPS_STALE_AFTER_SECONDS: z.coerce.number().int().default(60),
   GPS_OFFLINE_AFTER_SECONDS: z.coerce.number().int().default(300),
   GPS_MAX_FIX_AGE_SECONDS: z.coerce.number().int().default(120),
+
+  // Payments
+  PAYMENT_PROVIDER: z.enum(['sandbox', 'sslcommerz']).default('sandbox'),
+  API_BASE_URL: z.string().url().default('http://localhost:4777'),
+  WEB_BASE_URL: z.string().url().default('http://localhost:3000'),
+  SSLCOMMERZ_STORE_ID: z.string().optional(),
+  SSLCOMMERZ_STORE_PASSWORD: z.string().optional(),
+  SSLCOMMERZ_SANDBOX: z.coerce.boolean().default(true),
+  BOOKING_PENDING_EXPIRE_MINUTES: z.coerce.number().int().min(5).default(15),
 });
 
 export type Env = z.infer<typeof envSchema>;

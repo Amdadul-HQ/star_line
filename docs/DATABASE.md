@@ -16,9 +16,12 @@ Role ──< RolePermission >── Permission
 Branch ──< User (staff)        Branch ──< Bus        Branch ──< Trip (ticketing branch)
 Branch ── manager → User
 
-Route ──< RouteStop (ordered, lat/lng)
+Route ──< RouteStop (ordered, lat/lng; optional ticket-counter config:
+                     isCounter, counterPhone, counterAddress, note)
+RouteStop ──< RouteStopStaff >── User   (counter staff assignments)
 Route ──< Schedule ──< Trip
 Route ──< Trip
+Route.baseFareBdt = NON_AC fare · Route.acFareBdt = optional AC-class fare
 
 Bus ──< Trip                Bus ── BusLocation (1:1 latest fix)
 Bus ──< GpsSession          Bus ──< GpsLocationHistory

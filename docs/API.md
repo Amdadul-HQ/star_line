@@ -44,6 +44,20 @@ rotate with `POST /auth/refresh`.
 | GET | `/gps/trips/:id/latest` | GPS_VIEW, crew, or booked passenger |
 | GET/POST | `/gps/simulator` (+`/start`, `/:id/pause|resume|stop`, PATCH `/:id`) | (SIMULATOR_MANAGE) |
 
+### Booking & payments
+| GET | `/public/trips/search?from=&to=&date=` | public trip search with live availability |
+| GET | `/public/trips/:id/seats` | public seat map (layout + per-seat state) |
+| POST | `/bookings` | authenticated — atomic seat reservation (PENDING + pending payment) |
+| POST | `/bookings/:id/pay` | start/retry checkout → `{ redirectUrl }` |
+| GET | `/bookings/code/:code` | owner (or BOOKING_VIEW) booking lookup |
+| GET | `/payments/sandbox/checkout/:code` | dev gateway page (404 when a real provider is active) |
+| POST | `/payments/sslcommerz/success|fail|cancel` | gateway callbacks (success is server-validated) |
+
+Booking safety: seats are reserved by `BookingSeat` rows inside the create
+transaction — the DB unique `(tripId, seatNumber)` makes double-booking
+impossible. Fail/cancel callbacks and a 60 s sweep release seats from unpaid
+(PENDING) bookings after `BOOKING_PENDING_EXPIRE_MINUTES` (default 15).
+
 ### People & platform
 | GET | `/users` | (USER_VIEW or PASSENGER_VIEW; branch-scoped roles auto-filtered) |
 | POST | `/users/staff` | (USER_MANAGE) |

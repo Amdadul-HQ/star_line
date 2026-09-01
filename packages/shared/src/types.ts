@@ -100,6 +100,11 @@ export interface RouteStopDto {
   lat: number;
   lng: number;
   isBoardingPoint: boolean;
+  isCounter: boolean;
+  counterPhone: string | null;
+  counterAddress: string | null;
+  note: string | null;
+  staff: { id: string; name: string }[];
 }
 
 export interface RouteDto {
@@ -111,6 +116,7 @@ export interface RouteDto {
   distanceKm: number;
   estimatedDurationMin: number;
   baseFareBdt: number;
+  acFareBdt: number | null;
   status: RouteStatus;
   stops: RouteStopDto[];
   createdAt: string;
@@ -194,6 +200,54 @@ export interface BookingDto {
   passengerName: string;
   passengerPhone: string | null;
   createdAt: string;
+  paymentStatus?: string | null;
+  paymentMethod?: string | null;
+}
+
+/** Public search result for the passenger booking flow. */
+export interface TripSearchResultDto {
+  id: string;
+  routeName: string;
+  origin: string;
+  destination: string;
+  departureAt: string;
+  estimatedDurationMin: number;
+  fareBdt: number;
+  busNumber: string;
+  category: BusCategory;
+  serviceType: string;
+  seatCapacity: number;
+  seatsLeft: number;
+  status: TripStatus;
+}
+
+export type SeatDisplayState = 'AVAILABLE' | 'BOOKED' | 'HELD' | 'MINE';
+
+export interface SeatMapDto {
+  trip: {
+    id: string;
+    routeName: string;
+    origin: string;
+    destination: string;
+    departureAt: string;
+    fareBdt: number;
+    busNumber: string;
+    category: BusCategory;
+    serviceType: string;
+    status: TripStatus;
+  };
+  layout: SeatLayout;
+  /** seatNumber → state; seats missing from the map are AVAILABLE. */
+  seatStates: Record<string, SeatDisplayState>;
+  boardingPoints: string[];
+  /** Minutes an unpaid booking keeps seats reserved before auto-release. */
+  reserveMinutes: number;
+}
+
+export interface PaymentInitDto {
+  redirectUrl: string;
+  provider: string;
+  bookingCode: string;
 }
 
 export interface TrackTripDto {

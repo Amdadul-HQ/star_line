@@ -3,21 +3,38 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo } from 'react';
-import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import {
+  CircleMarker,
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet';
 import type { MapViewProps } from './map-view';
 
 /** Bangladesh-centered default view. */
 const DEFAULT_CENTER: [number, number] = [23.5, 90.9];
 const DEFAULT_ZOOM = 7;
 
-function markerIcon(label: string, tone: 'live' | 'stale' | 'idle') {
+function markerIcon(label: string, tone: 'live' | 'stale' | 'idle', glyph = '🚌') {
   const toneClass =
     tone === 'stale' ? 'bus-marker--stale' : tone === 'idle' ? 'bus-marker--idle' : '';
   return L.divIcon({
     className: '',
-    html: `<div class="bus-marker ${toneClass}">🚌 ${label}</div>`,
+    html: `<div class="bus-marker ${toneClass}">${glyph} ${label}</div>`,
     iconSize: [0, 0],
   });
+}
+
+function ClickCatcher({ onMapClick }: { onMapClick: (pos: { lat: number; lng: number }) => void }) {
+  useMapEvents({
+    click: (e) => onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng }),
+  });
+  return null;
 }
 
 function FitBounds({
@@ -49,6 +66,7 @@ export default function LeafletMap({
   markers,
   path,
   fit = false,
+  onMapClick,
   className,
 }: MapViewProps) {
   const fitPoints = useMemo<Array<[number, number]>>(() => {
@@ -66,6 +84,7 @@ export default function LeafletMap({
       attributionControl={false}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      {onMapClick && <ClickCatcher onMapClick={onMapClick} />}
       {path && path.length > 1 && (
         <Polyline
           positions={path.map((s) => [s.lat, s.lng] as [number, number])}
@@ -85,7 +104,11 @@ export default function LeafletMap({
         </CircleMarker>
       ))}
       {markers.map((m) => (
-        <Marker key={m.id} position={[m.lat, m.lng]} icon={markerIcon(m.label, m.tone ?? 'live')}>
+        <Marker
+          key={m.id}
+          position={[m.lat, m.lng]}
+          icon={markerIcon(m.label, m.tone ?? 'live', m.glyph)}
+        >
           {m.popupHtml && (
             <Popup>
               <div dangerouslySetInnerHTML={{ __html: m.popupHtml }} />

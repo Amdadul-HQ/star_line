@@ -56,16 +56,16 @@ const CITY: Record<string, StopSeed> = {
 };
 
 const ROUTE_SEEDS = [
-  { code: 'DHK-FEN', origin: 'Dhaka', destination: 'Feni', distanceKm: 151, durationMin: 240, fare: 650, stops: [CITY.Dhaka, CITY.Daudkandi, CITY.Cumilla, CITY.Feni] },
-  { code: 'FEN-DHK', origin: 'Feni', destination: 'Dhaka', distanceKm: 151, durationMin: 240, fare: 650, stops: [CITY.Feni, CITY.Cumilla, CITY.Daudkandi, CITY.Dhaka] },
-  { code: 'DHK-CTG', origin: 'Dhaka', destination: 'Chattogram', distanceKm: 264, durationMin: 390, fare: 900, stops: [CITY.Dhaka, CITY.Daudkandi, CITY.Cumilla, CITY.Feni, CITY.Sitakunda, CITY.Chattogram] },
-  { code: 'CTG-DHK', origin: 'Chattogram', destination: 'Dhaka', distanceKm: 264, durationMin: 390, fare: 900, stops: [CITY.Chattogram, CITY.Sitakunda, CITY.Feni, CITY.Cumilla, CITY.Daudkandi, CITY.Dhaka] },
-  { code: 'DHK-CXB', origin: 'Dhaka', destination: "Cox's Bazar", distanceKm: 414, durationMin: 600, fare: 1400, stops: [CITY.Dhaka, CITY.Cumilla, CITY.Feni, CITY.Chattogram, CITY.Lohagara, CITY.CoxsBazar] },
-  { code: 'FEN-CTG', origin: 'Feni', destination: 'Chattogram', distanceKm: 113, durationMin: 150, fare: 350, stops: [CITY.Feni, CITY.Sitakunda, CITY.Chattogram] },
-  { code: 'DHK-NOA', origin: 'Dhaka', destination: 'Noakhali', distanceKm: 190, durationMin: 300, fare: 700, stops: [CITY.Dhaka, CITY.Daudkandi, CITY.Cumilla, CITY.Choumuhani, CITY.Maijdee] },
-  { code: 'NOA-DHK', origin: 'Noakhali', destination: 'Dhaka', distanceKm: 190, durationMin: 300, fare: 700, stops: [CITY.Maijdee, CITY.Choumuhani, CITY.Cumilla, CITY.Daudkandi, CITY.Dhaka] },
-  { code: 'DHK-SYL', origin: 'Dhaka', destination: 'Sylhet', distanceKm: 240, durationMin: 330, fare: 800, stops: [CITY.Dhaka, CITY.Narsingdi, CITY.Bhairab, CITY.Habiganj, CITY.Sylhet] },
-  { code: 'CTG-CXB', origin: 'Chattogram', destination: "Cox's Bazar", distanceKm: 150, durationMin: 210, fare: 500, stops: [CITY.Chattogram, CITY.Lohagara, CITY.CoxsBazar] },
+  { code: 'DHK-FEN', origin: 'Dhaka', destination: 'Feni', distanceKm: 151, durationMin: 240, fare: 500, acFare: 650, stops: [CITY.Dhaka, CITY.Daudkandi, CITY.Cumilla, CITY.Feni] },
+  { code: 'FEN-DHK', origin: 'Feni', destination: 'Dhaka', distanceKm: 151, durationMin: 240, fare: 500, acFare: 650, stops: [CITY.Feni, CITY.Cumilla, CITY.Daudkandi, CITY.Dhaka] },
+  { code: 'DHK-CTG', origin: 'Dhaka', destination: 'Chattogram', distanceKm: 264, durationMin: 390, fare: 900, acFare: 1150, stops: [CITY.Dhaka, CITY.Daudkandi, CITY.Cumilla, CITY.Feni, CITY.Sitakunda, CITY.Chattogram] },
+  { code: 'CTG-DHK', origin: 'Chattogram', destination: 'Dhaka', distanceKm: 264, durationMin: 390, fare: 900, acFare: 1150, stops: [CITY.Chattogram, CITY.Sitakunda, CITY.Feni, CITY.Cumilla, CITY.Daudkandi, CITY.Dhaka] },
+  { code: 'DHK-CXB', origin: 'Dhaka', destination: "Cox's Bazar", distanceKm: 414, durationMin: 600, fare: 1400, acFare: 1800, stops: [CITY.Dhaka, CITY.Cumilla, CITY.Feni, CITY.Chattogram, CITY.Lohagara, CITY.CoxsBazar] },
+  { code: 'FEN-CTG', origin: 'Feni', destination: 'Chattogram', distanceKm: 113, durationMin: 150, fare: 350, acFare: 450, stops: [CITY.Feni, CITY.Sitakunda, CITY.Chattogram] },
+  { code: 'DHK-NOA', origin: 'Dhaka', destination: 'Noakhali', distanceKm: 190, durationMin: 300, fare: 700, acFare: 900, stops: [CITY.Dhaka, CITY.Daudkandi, CITY.Cumilla, CITY.Choumuhani, CITY.Maijdee] },
+  { code: 'NOA-DHK', origin: 'Noakhali', destination: 'Dhaka', distanceKm: 190, durationMin: 300, fare: 700, acFare: 900, stops: [CITY.Maijdee, CITY.Choumuhani, CITY.Cumilla, CITY.Daudkandi, CITY.Dhaka] },
+  { code: 'DHK-SYL', origin: 'Dhaka', destination: 'Sylhet', distanceKm: 240, durationMin: 330, fare: 800, acFare: 1000, stops: [CITY.Dhaka, CITY.Narsingdi, CITY.Bhairab, CITY.Habiganj, CITY.Sylhet] },
+  { code: 'CTG-CXB', origin: 'Chattogram', destination: "Cox's Bazar", distanceKm: 150, durationMin: 210, fare: 500, acFare: 650, stops: [CITY.Chattogram, CITY.Lohagara, CITY.CoxsBazar] },
 ];
 
 const SCHEDULE_TIMES = ['06:00', '08:30', '12:00', '16:30', '22:30'];
@@ -272,13 +272,22 @@ async function main() {
         distanceKm: seed.distanceKm,
         estimatedDurationMin: seed.durationMin,
         baseFareBdt: seed.fare,
+        acFareBdt: seed.acFare,
         stops: {
-          create: seed.stops.map((s, idx) => ({
-            name: s.name,
-            order: idx,
-            lat: s.lat,
-            lng: s.lng,
-          })),
+          create: seed.stops.map((s, idx) => {
+            // Endpoints double as staffed ticket counters.
+            const isCounter = idx === 0 || idx === seed.stops.length - 1;
+            return {
+              name: s.name,
+              order: idx,
+              lat: s.lat,
+              lng: s.lng,
+              isCounter,
+              counterPhone: isCounter ? `+8801713${String(100000 + idx)}` : null,
+              counterAddress: isCounter ? s.name : null,
+              note: isCounter ? 'Opens 1 hour before first departure' : null,
+            };
+          }),
         },
       },
     });
@@ -297,6 +306,15 @@ async function main() {
     }
     schedulesByRoute.set(route.id, scheds);
   }
+  // Demo ticketer staffs the Dhaka → Feni origin counter.
+  const dhakaFeniOrigin = await prisma.routeStop.findFirst({
+    where: { routeId: routes[0].id, order: 0 },
+  });
+  if (dhakaFeniOrigin) {
+    await prisma.routeStopStaff.create({
+      data: { routeStopId: dhakaFeniOrigin.id, userId: ticketerDemo.id },
+    });
+  }
   console.log(`  branches: ${branches.length}, buses: ${buses.length}, routes: ${routes.length}, schedules: ${routes.length * SCHEDULE_TIMES.length}`);
 
   // ----------------------------------------------------- trips (−2 … +2 days)
@@ -309,6 +327,7 @@ async function main() {
         const schedule = schedulesByRoute.get(routes[r].id)!.find((s) => s.departureTime === time)!;
         const bus = buses[(r * 2 + slot) % buses.length];
         const status: TripStatus = day < 0 ? 'COMPLETED' : 'SCHEDULED';
+        const classFare = bus.category === 'AC' ? ROUTE_SEEDS[r].acFare : ROUTE_SEEDS[r].fare;
         const trip = await prisma.trip.create({
           data: {
             routeId: routes[r].id,
@@ -316,7 +335,7 @@ async function main() {
             serviceDate: serviceDateValue(date),
             departureAt: dhakaDateTime(date, time),
             status,
-            fareBdt: ROUTE_SEEDS[r].fare,
+            fareBdt: classFare,
             busId: bus.id,
             driverId: drivers[r % drivers.length].id,
             supervisorId: supervisors[r % supervisors.length].id,
@@ -325,7 +344,7 @@ async function main() {
             ...(day < 0 ? { arrivedAt: dhakaDateTime(date, '23:00') } : {}),
           },
         });
-        trips.push({ id: trip.id, routeIdx: r, date, time, busId: bus.id, fare: ROUTE_SEEDS[r].fare });
+        trips.push({ id: trip.id, routeIdx: r, date, time, busId: bus.id, fare: classFare });
       }
     }
   }

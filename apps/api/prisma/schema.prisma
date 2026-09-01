@@ -127,6 +127,7 @@ model User {
   notifications   Notification[]
   gpsSessions     GpsSession[]
   seatHolds       SeatHold[]
+  counterDuties   RouteStopStaff[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -258,7 +259,10 @@ model Route {
   destination          String
   distanceKm           Float
   estimatedDurationMin Int
+  /// Fare for NON_AC buses (the base class).
   baseFareBdt          Int
+  /// Optional premium fare applied when an AC bus runs the trip.
+  acFareBdt            Int?
   status               RouteStatus @default(ACTIVE)
 
   stops     RouteStop[]
@@ -282,7 +286,26 @@ model RouteStop {
   lng             Float
   isBoardingPoint Boolean @default(true)
 
+  // Ticket-counter configuration (admin places counters on the route map)
+  isCounter      Boolean @default(false)
+  counterPhone   String?
+  counterAddress String?
+  note           String?
+
+  staff RouteStopStaff[]
+
   @@unique([routeId, order])
+}
+
+/// Counter staff assignment — which employees run a ticket counter.
+model RouteStopStaff {
+  routeStopId String
+  userId      String
+
+  routeStop RouteStop @relation(fields: [routeStopId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([routeStopId, userId])
 }
 
 model Schedule {

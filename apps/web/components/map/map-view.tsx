@@ -18,6 +18,8 @@ export interface MapMarker {
   label: string;
   headingDeg?: number | null;
   tone?: 'live' | 'stale' | 'idle';
+  /** Emoji shown in the pill (default 🚌). */
+  glyph?: string;
   /** Simple HTML string rendered inside the popup. */
   popupHtml?: string;
 }
@@ -36,6 +38,8 @@ export interface MapViewProps {
   path?: MapStop[];
   /** Fit bounds to markers+path on data changes. */
   fit?: boolean;
+  /** Editor mode: notifies clicks with map coordinates (e.g. stop placement). */
+  onMapClick?: (position: { lat: number; lng: number }) => void;
   className?: string;
 }
 

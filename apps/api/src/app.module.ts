@@ -6,8 +6,10 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { BookingsModule } from './bookings/bookings.module';
 import { BranchesModule } from './branches/branches.module';
 import { BusesModule } from './buses/buses.module';
+import { PaymentsModule } from './payments/payments.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -43,6 +45,8 @@ import { UsersModule } from './users/users.module';
     FleetModule,
     GpsModule,
     PassengerModule,
+    PaymentsModule,
+    BookingsModule,
     SettingsModule,
     HealthModule,
   ],
