@@ -173,17 +173,177 @@ body {
   animation-iteration-count: infinite;
 }
 
+/* ------------------------------------------------------- hero animations */
+@keyframes word-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px) rotate(1.5deg);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.word-rise {
+  display: inline-block;
+  opacity: 0;
+  animation: word-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--word-delay, 0ms);
+  will-change: transform, opacity;
+}
+
+@keyframes draw-underline {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.hero-underline path {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: draw-underline 0.9s ease-out forwards;
+  animation-delay: var(--underline-delay, 700ms);
+}
+
+/* Animated road along a hero's bottom edge: scrolling lane dashes + a bus. */
+.road-strip {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.22);
+  overflow: clip;
+  pointer-events: none;
+}
+.road-strip::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.7) 0 26px,
+    transparent 26px 52px
+  );
+  background-size: 52px 3px;
+  animation: dash-scroll 0.8s linear infinite;
+}
+@keyframes dash-scroll {
+  to {
+    background-position-x: -52px;
+  }
+}
+.road-bus {
+  position: absolute;
+  bottom: 5px;
+  left: -8%;
+  font-size: 24px;
+  line-height: 1;
+  transform: scaleX(-1);
+  animation: bus-drive 13s linear infinite;
+}
+@keyframes bus-drive {
+  0% {
+    left: -8%;
+  }
+  100% {
+    left: 105%;
+  }
+}
+
+/* Bus shuttling between From → To on the search hero. */
+.route-crossing {
+  position: relative;
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.65) 0 10px,
+    transparent 10px 20px
+  );
+  background-size: 20px 3px;
+  animation: dash-scroll 0.7s linear infinite;
+}
+.crossing-bus {
+  position: absolute;
+  top: -26px;
+  left: -12%;
+  font-size: 20px;
+  line-height: 1;
+  transform: scaleX(-1);
+  animation: crossing-run 3.6s ease-in-out infinite;
+}
+@keyframes crossing-run {
+  0% {
+    left: -12%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    left: 102%;
+    opacity: 0;
+  }
+}
+
+/* Periodic light sweep across a primary CTA. */
+.btn-shine {
+  position: relative;
+  overflow: clip;
+}
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-130%) skewX(-12deg);
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.5) 50%, transparent 62%);
+  animation: shine 4.6s ease-in-out infinite;
+}
+@keyframes shine {
+  0%,
+  58% {
+    transform: translateX(-130%) skewX(-12deg);
+  }
+  78%,
+  100% {
+    transform: translateX(130%) skewX(-12deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1;
     transform: none;
     transition: none;
   }
+  .word-rise {
+    opacity: 1;
+    animation: none;
+  }
+  .hero-underline path {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
   .marquee-track,
   .animate-float-soft,
   .track-dash,
   .bus-pulse,
   .preview-progress,
+  .road-strip::before,
+  .road-bus,
+  .route-crossing,
+  .crossing-bus,
+  .btn-shine::after,
   .group:hover .icon-wiggle {
     animation: none;
   }

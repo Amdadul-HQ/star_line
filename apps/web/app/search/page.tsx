@@ -6,6 +6,8 @@ import { ArrowRight, BusFront, Clock3 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
+import { AnimatedHeadline, RoadStrip } from '@/components/landing/hero-bits';
+import { Reveal } from '@/components/landing/reveal';
 import { PublicHeader } from '@/components/layout/public-header';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -74,11 +76,64 @@ function SearchContent() {
   return (
     <div className="min-h-screen bg-slate-50">
       <PublicHeader />
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="text-xl font-bold text-ink">{t('booking.searchTitle')}</h1>
-        <p className="mt-0.5 text-sm text-ink-soft">{t('booking.searchSubtitle')}</p>
 
-        <Card className="mt-4 p-4">
+      {/* ------------------------------------------------------------ hero */}
+      <section className="relative overflow-clip bg-gradient-to-b from-brand-700 to-brand-600 pb-20 pt-10 text-white">
+        <div className="animate-float-soft pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+        <div
+          className="animate-float-soft pointer-events-none absolute -left-14 bottom-6 h-44 w-44 rounded-full bg-black/10 blur-2xl"
+          style={{ animationDelay: '-3.5s' }}
+        />
+        <div className="relative mx-auto max-w-4xl px-4">
+          {canSearch ? (
+            <>
+              <p
+                className="word-rise text-xs font-bold uppercase tracking-widest text-brand-200"
+                style={{ '--word-delay': '0ms' } as React.CSSProperties}
+              >
+                {t('booking.searchTitle')}
+              </p>
+              <div className="mt-3 flex items-center gap-4 sm:gap-6">
+                <span
+                  className="word-rise text-2xl font-extrabold sm:text-4xl"
+                  style={{ '--word-delay': '90ms' } as React.CSSProperties}
+                >
+                  {activeFrom}
+                </span>
+                <span className="route-crossing max-w-[240px] min-w-[70px] flex-1" aria-hidden>
+                  <span className="crossing-bus">🚌</span>
+                </span>
+                <span
+                  className="word-rise text-2xl font-extrabold sm:text-4xl"
+                  style={{ '--word-delay': '220ms' } as React.CSSProperties}
+                >
+                  {activeTo}
+                </span>
+              </div>
+              <p
+                className="word-rise mt-3 text-sm font-semibold text-brand-100"
+                style={{ '--word-delay': '340ms' } as React.CSSProperties}
+              >
+                {formatDate(activeDate, locale)}
+              </p>
+            </>
+          ) : (
+            <>
+              <AnimatedHeadline
+                text={t('booking.searchTitle')}
+                className="text-3xl font-extrabold sm:text-4xl"
+              />
+              <Reveal delay={260}>
+                <p className="mt-2 text-sm text-brand-100">{t('booking.searchSubtitle')}</p>
+              </Reveal>
+            </>
+          )}
+        </div>
+        <RoadStrip />
+      </section>
+
+      <main className="mx-auto max-w-4xl px-4 pb-10">
+        <Card className="relative z-10 -mt-12 p-4 shadow-xl">
           <form className="grid gap-3 sm:grid-cols-4" onSubmit={submit}>
             <Field label={t('landing.from')}>
               <Select value={from} onChange={(e) => setFrom(e.target.value)}>
@@ -153,11 +208,11 @@ function SearchContent() {
           ) : results.data && results.data.length > 0 ? (
             results.data
               .filter((trip) => classFilter === 'ALL' || trip.category === classFilter)
-              .map((trip) => {
+              .map((trip, resultIdx) => {
               const soldOut = trip.seatsLeft <= 0;
               return (
+                <Reveal key={trip.id} delay={resultIdx * 80}>
                 <Card
-                  key={trip.id}
                   className="p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
@@ -206,6 +261,7 @@ function SearchContent() {
                     </div>
                   </div>
                 </Card>
+                </Reveal>
               );
             })
           ) : (

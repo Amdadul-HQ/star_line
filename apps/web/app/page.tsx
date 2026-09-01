@@ -22,6 +22,7 @@ import { Card } from '@/components/ui/card';
 import { Field, Input, Select } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/feedback';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
+import { AnimatedHeadline, RoadStrip, RotatingRoutes } from '@/components/landing/hero-bits';
 import { CountUp, Reveal } from '@/components/landing/reveal';
 import { TrackingPreview, type PublicRoute } from '@/components/landing/tracking-preview';
 import { api } from '@/lib/api';
@@ -104,30 +105,33 @@ export default function LandingPage() {
           style={{ animationDelay: '-4s' }}
         />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-28 pt-14 sm:pt-16 lg:grid-cols-2">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-32 pt-14 sm:pt-16 lg:grid-cols-2">
           <div>
-            <Reveal>
-              <h1 className="max-w-2xl text-3xl font-extrabold leading-tight sm:text-5xl">
-                {t('landing.heroTitle')}
-              </h1>
-            </Reveal>
-            <Reveal delay={120}>
+            <AnimatedHeadline
+              text={t('landing.heroTitle')}
+              highlightWord={t('landing.heroHighlightWord')}
+              className="max-w-2xl text-3xl font-extrabold leading-tight sm:text-5xl"
+            />
+            <Reveal delay={320}>
               <p className="mt-4 max-w-xl text-sm text-brand-100 sm:text-base">
                 {t('landing.heroSubtitle')}
               </p>
             </Reveal>
-            <Reveal delay={240}>
+            <Reveal delay={440}>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link href="/track">
                   <Button
                     variant="secondary"
-                    className="bg-white text-brand-700 transition-transform hover:scale-[1.03] hover:bg-brand-50"
+                    className="btn-shine bg-white text-brand-700 transition-transform hover:scale-[1.03] hover:bg-brand-50"
                   >
                     <Radio className="h-4 w-4" />
                     {t('landing.trackYourBus')}
                   </Button>
                 </Link>
               </div>
+            </Reveal>
+            <Reveal delay={560}>
+              <RotatingRoutes routes={routes} />
             </Reveal>
           </div>
 
@@ -139,10 +143,12 @@ export default function LandingPage() {
             )}
           </Reveal>
         </div>
+
+        <RoadStrip />
       </section>
 
       {/* ---------------------------------------------------- search panel */}
-      <section className="mx-auto -mt-16 max-w-6xl px-4">
+      <section className="relative z-10 mx-auto -mt-16 max-w-6xl px-4">
         <Reveal>
           <Card className="p-5 transition-shadow hover:shadow-xl">
             <form
