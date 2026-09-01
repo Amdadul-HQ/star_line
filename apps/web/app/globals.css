@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-50 text-ink antialiased;
+}
+
+/* ------------------------------------------------------------- map markers */
+.bus-marker {
+  @apply flex items-center gap-1 rounded-full border border-white bg-brand-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-md;
+  white-space: nowrap;
+  width: max-content;
+  transform: translate(-50%, -50%);
+}
+
+.bus-marker--stale {
+  @apply bg-slate-400;
+}
+
+.bus-marker--idle {
+  @apply bg-amber-500;
+}
+
+.stop-marker {
+  @apply block h-3 w-3 rounded-full border-2 border-white bg-ink shadow;
+  transform: translate(-50%, -50%);
+}
+
+.leaflet-container {
+  font: inherit;
+}
+
+/* thin scrollbars for dashboard panes */
+.thin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300;
+}

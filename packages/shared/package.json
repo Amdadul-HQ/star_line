@@ -1,0 +1,18 @@
+{
+  "name": "@starline/shared",
+  "version": "0.1.0",
+  "description": "Shared types, RBAC contracts, zod schemas and realtime events for Star Line",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json",
+    "lint": "echo \"(no linter configured for shared yet)\""
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

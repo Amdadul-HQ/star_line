@@ -1,0 +1,582 @@
+// Star Line — relational schema (PostgreSQL).
+// Booking/payment/notification models are defined now (Phase 2+ implement
+// their flows) so migrations don't need destructive rewrites later.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------ enums
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum BusCategory {
+  AC
+  NON_AC
+}
+
+enum BusStatus {
+  ACTIVE
+  IN_TRIP
+  IDLE
+  MAINTENANCE
+  INACTIVE
+  OFFLINE
+}
+
+enum RouteStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TripStatus {
+  DRAFT
+  SCHEDULED
+  BOARDING
+  DEPARTED
+  IN_TRANSIT
+  ARRIVED
+  COMPLETED
+  CANCELLED
+}
+
+enum BookingStatus {
+  CONFIRMED
+  PENDING
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  BKASH
+  NAGAD
+  CARD
+  SANDBOX
+}
+
+enum GpsSessionStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum GpsSource {
+  DRIVER_APP
+  SIMULATOR
+  DEVICE
+}
+
+enum NotificationChannel {
+  IN_APP
+  SMS
+  EMAIL
+  PUSH
+}
+
+// -------------------------------------------------------- identity & RBAC
+
+model User {
+  id              String     @id @default(cuid())
+  name            String
+  email           String?    @unique
+  phone           String?    @unique
+  passwordHash    String?
+  status          UserStatus @default(ACTIVE)
+  preferredLocale String     @default("en")
+
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  branchId String?
+  branch   Branch? @relation("BranchStaff", fields: [branchId], references: [id])
+
+  passengerProfile PassengerProfile?
+  staffProfile     StaffProfile?
+
+  refreshTokens   RefreshToken[]
+  driverTrips     Trip[]         @relation("TripDriver")
+  supervisorTrips Trip[]         @relation("TripSupervisor")
+  helperTrips     Trip[]         @relation("TripHelper")
+  bookings        Booking[]      @relation("BookingPassenger")
+  bookingsMade    Booking[]      @relation("BookingAgent")
+  managedBranches Branch[]       @relation("BranchManager")
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+  gpsSessions     GpsSession[]
+  seatHolds       SeatHold[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roleId])
+  @@index([branchId])
+  @@index([name])
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  isSystem    Boolean @default(false)
+
+  users       User[]
+  permissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  code        String @unique
+  group       String
+  description String
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model PassengerProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  emergencyContact String?
+  address          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StaffProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  employeeCode  String?  @unique
+  licenseNumber String?
+  joinedAt      DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ----------------------------------------------------------- organization
+
+model Branch {
+  id       String       @id @default(cuid())
+  name     String
+  code     String       @unique
+  address  String
+  district String
+  division String
+  phone    String
+  status   BranchStatus @default(ACTIVE)
+
+  managerId String?
+  manager   User?   @relation("BranchManager", fields: [managerId], references: [id])
+
+  staff User[] @relation("BranchStaff")
+  buses Bus[]
+  trips Trip[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([district])
+  @@index([status])
+}
+
+// ------------------------------------------------------------------ fleet
+
+model Bus {
+  id                 String      @id @default(cuid())
+  busNumber          String      @unique
+  registrationNumber String      @unique
+  brand              String
+  model              String
+  category           BusCategory
+  serviceType        String
+  seatCapacity       Int
+  seatLayout         Json?
+  status             BusStatus   @default(IDLE)
+
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  trips           Trip[]
+  location        BusLocation?
+  gpsSessions     GpsSession[]
+  locationHistory GpsLocationHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([branchId])
+}
+
+// ----------------------------------------------------------------- routes
+
+model Route {
+  id                   String      @id @default(cuid())
+  name                 String
+  code                 String      @unique
+  origin               String
+  destination          String
+  distanceKm           Float
+  estimatedDurationMin Int
+  baseFareBdt          Int
+  status               RouteStatus @default(ACTIVE)
+
+  stops     RouteStop[]
+  schedules Schedule[]
+  trips     Trip[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model RouteStop {
+  id      String @id @default(cuid())
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  name            String
+  order           Int
+  lat             Float
+  lng             Float
+  isBoardingPoint Boolean @default(true)
+
+  @@unique([routeId, order])
+}
+
+model Schedule {
+  id      String @id @default(cuid())
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  departureTime String // "HH:mm", 24h local (Asia/Dhaka)
+  daysOfWeek    Int[] // 0 = Sunday … 6 = Saturday
+  fareBdt       Int?
+  isActive      Boolean @default(true)
+
+  trips Trip[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([routeId])
+}
+
+// ------------------------------------------------------------------ trips
+
+model Trip {
+  id String @id @default(cuid())
+
+  routeId String
+  route   Route  @relation(fields: [routeId], references: [id])
+
+  scheduleId String?
+  schedule   Schedule? @relation(fields: [scheduleId], references: [id])
+
+  serviceDate DateTime   @db.Date
+  departureAt DateTime
+  arrivedAt   DateTime?
+  status      TripStatus @default(SCHEDULED)
+  fareBdt     Int
+
+  busId String?
+  bus   Bus?    @relation(fields: [busId], references: [id])
+
+  driverId String?
+  driver   User?   @relation("TripDriver", fields: [driverId], references: [id])
+
+  supervisorId String?
+  supervisor   User?   @relation("TripSupervisor", fields: [supervisorId], references: [id])
+
+  helperId String?
+  helper   User?   @relation("TripHelper", fields: [helperId], references: [id])
+
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  bookings     Booking[]
+  bookingSeats BookingSeat[]
+  seatHolds    SeatHold[]
+  gpsSessions  GpsSession[]
+  busLocations BusLocation[]
+  history      GpsLocationHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([routeId, serviceDate])
+  @@index([busId, departureAt])
+  @@index([serviceDate, status])
+  @@index([driverId, departureAt])
+  @@index([supervisorId, departureAt])
+  @@index([status])
+}
+
+// -------------------------------------------------------------------- gps
+
+/// Latest known position per bus — one row per bus, optimized for fast reads.
+model BusLocation {
+  busId String @id
+  bus   Bus    @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  tripId String?
+  trip   Trip?   @relation(fields: [tripId], references: [id])
+
+  lat        Float
+  lng        Float
+  speedKph   Float?
+  heading    Float?
+  accuracy   Float?
+  source     GpsSource @default(DRIVER_APP)
+  recordedAt DateTime
+
+  updatedAt DateTime @updatedAt
+
+  @@index([recordedAt])
+}
+
+model GpsSession {
+  id String @id @default(cuid())
+
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id])
+
+  busId String
+  bus   Bus    @relation(fields: [busId], references: [id])
+
+  startedById String?
+  startedBy   User?   @relation(fields: [startedById], references: [id])
+
+  source    GpsSource
+  status    GpsSessionStatus @default(ACTIVE)
+  startedAt DateTime         @default(now())
+  endedAt   DateTime?
+
+  history GpsLocationHistory[]
+
+  @@index([tripId])
+  @@index([busId, status])
+}
+
+/// Append-only trail for analytics/replay; written asynchronously.
+model GpsLocationHistory {
+  id BigInt @id @default(autoincrement())
+
+  busId String
+  bus   Bus    @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  tripId String?
+  trip   Trip?   @relation(fields: [tripId], references: [id])
+
+  sessionId String?
+  session   GpsSession? @relation(fields: [sessionId], references: [id])
+
+  lat        Float
+  lng        Float
+  speedKph   Float?
+  heading    Float?
+  accuracy   Float?
+  recordedAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([busId, recordedAt])
+  @@index([tripId, recordedAt])
+}
+
+// --------------------------------------------------- bookings (Phase 2 flows)
+
+model Booking {
+  id   String @id @default(cuid())
+  code String @unique
+
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id])
+
+  passengerId String
+  passenger   User   @relation("BookingPassenger", fields: [passengerId], references: [id])
+
+  bookedById String?
+  bookedBy   User?   @relation("BookingAgent", fields: [bookedById], references: [id])
+
+  status        BookingStatus @default(CONFIRMED)
+  fareTotalBdt  Int
+  boardingPoint String?
+
+  seats   BookingSeat[]
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId])
+  @@index([passengerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BookingSeat {
+  id String @id @default(cuid())
+
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // tripId is denormalized so the DB itself guarantees a seat can only be
+  // sold once per trip — the core double-booking defence.
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id])
+
+  seatNumber String
+
+  @@unique([tripId, seatNumber])
+}
+
+model SeatHold {
+  id String @id @default(cuid())
+
+  tripId String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  seatNumber String
+  heldById   String?
+  heldBy     User?   @relation(fields: [heldById], references: [id])
+  expiresAt  DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([tripId, seatNumber])
+  @@index([expiresAt])
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  amountBdt   Int
+  method      PaymentMethod @default(CASH)
+  status      PaymentStatus @default(PAID)
+  provider    String?
+  providerRef String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --------------------------------------------------------------- platform
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String
+  title   String
+  body    String
+  channel NotificationChannel @default(IN_APP)
+  data    Json?
+  readAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt])
+}
+
+model OtpCode {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model RefreshToken {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ip        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  ip        String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  group     String   @default("general")
+  updatedAt DateTime @updatedAt
+}

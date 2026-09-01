@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: starline-db
+    environment:
+      POSTGRES_USER: starline
+      POSTGRES_PASSWORD: starline_dev_pw
+      POSTGRES_DB: starline
+    ports:
+      - "5433:5432"
+    volumes:
+      - starline_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U starline -d starline"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Optional DB browser: docker compose --profile tools up -d
+  adminer:
+    image: adminer:4
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    profiles:
+      - tools
+
+volumes:
+  starline_pgdata:
