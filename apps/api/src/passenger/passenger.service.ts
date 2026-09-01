@@ -25,6 +25,7 @@ const bookingInclude = {
     },
   },
   seats: { select: { seatNumber: true } },
+  payment: { select: { status: true, method: true } },
 } as const;
 
 type BookingRow = {
@@ -42,6 +43,7 @@ type BookingRow = {
     bus: { busNumber: string } | null;
   };
   seats: { seatNumber: string }[];
+  payment: { status: string; method: string } | null;
 };
 
 @Injectable()
@@ -71,6 +73,8 @@ export class PassengerService {
       passengerName: passenger.name,
       passengerPhone: passenger.phone,
       createdAt: b.createdAt.toISOString(),
+      paymentStatus: b.payment?.status ?? null,
+      paymentMethod: b.payment?.method ?? null,
     };
   }
 

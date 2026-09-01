@@ -1,18 +1,32 @@
 'use client';
 
-import type { BookingDto } from '@starline/shared';
-import { ArrowRight, Radio } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import type { BookingDto, PaymentInitDto } from '@starline/shared';
+import { ArrowRight, CreditCard, Radio } from 'lucide-react';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/components/ui/toast';
+import { api, ApiError } from '@/lib/api';
 import { formatDate, formatMoney, formatTime } from '@/lib/format';
 import { useI18n, useT } from '@/lib/i18n';
 
 export function BookingCard({ booking, showTrack = true }: { booking: BookingDto; showTrack?: boolean }) {
   const t = useT();
   const { locale } = useI18n();
-  const trackable = ['CONFIRMED', 'PENDING'].includes(booking.status);
+  const toast = useToast();
+  const trackable = booking.status === 'CONFIRMED';
+  const payable = booking.status === 'PENDING' && booking.paymentStatus !== 'PAID';
+
+  const payNow = useMutation({
+    mutationFn: () => api<PaymentInitDto>(`/bookings/${booking.id}/pay`, { method: 'POST' }),
+    onSuccess: (payment) => {
+      window.location.href = payment.redirectUrl;
+    },
+    onError: (err) =>
+      toast.push(err instanceof ApiError ? t(`errors.${err.code}`) : t('errors.NETWORK'), 'error'),
+  });
 
   return (
     <Card className="p-5">
@@ -49,14 +63,22 @@ export function BookingCard({ booking, showTrack = true }: { booking: BookingDto
         </div>
       </dl>
 
-      {showTrack && trackable && (
-        <div className="mt-4">
-          <Link href={`/passenger/track/${booking.tripId}`}>
-            <Button size="sm">
-              <Radio className="h-4 w-4" />
-              {t('passenger.trackLive')}
+      {((showTrack && trackable) || payable) && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {showTrack && trackable && (
+            <Link href={`/passenger/track/${booking.tripId}`}>
+              <Button size="sm">
+                <Radio className="h-4 w-4" />
+                {t('passenger.trackLive')}
+              </Button>
+            </Link>
+          )}
+          {payable && (
+            <Button size="sm" variant="success" loading={payNow.isPending} onClick={() => payNow.mutate()}>
+              <CreditCard className="h-4 w-4" />
+              {t('booking.payNow')}
             </Button>
-          </Link>
+          )}
         </div>
       )}
     </Card>
